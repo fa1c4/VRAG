@@ -1,3 +1,10 @@
+# FA1C4's ignore files
+env.sh
+lab*
+
+# FA1C4's ignore directories
+results/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
