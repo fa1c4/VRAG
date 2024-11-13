@@ -1,7 +1,7 @@
 from liquid import Template 
 
 
-task_templates={
+task_templates = {
     "Existence": {
         "Name":"Vulnerability Existence Detection",
         "system":"Assuming you are an experienced code vulnerability analyst and the following code may have vulnerabilities.",
@@ -25,7 +25,7 @@ task_templates={
 }
 
 def format_dataset(task_name, raw_dataset, method=None):
-    general_prompt=Template("{{ question }}\n{{example_with_restriction}}\n{{ code }}\n{{ restriction }}\n{{cot_with_restriction}}")
+    general_prompt = Template("{{ question }}\n{{example_with_restriction}}\n{{ code }}\n{{ restriction }}\n{{cot_with_restriction}}")
     dataset=[]
     
     template=task_templates[task_name]

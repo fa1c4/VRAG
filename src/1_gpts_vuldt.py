@@ -2,12 +2,11 @@
 code for gpts vulnerabilities detection experiments
 models: gpt-3.5-turbo, gpt-4-turbo, gpt-4o
 '''
-
-import openai
-from openai import OpenAI
-from vuldetectbench.generation import Tasks, Agent, VulDetectBench_Engine
 import os
 import requests
+import openai
+from openai import OpenAI
+from vuldt import Tasks, Agent, VulDT_Engine
 
 
 glb_failed_cnt = 0
@@ -40,7 +39,7 @@ class OpenAIAgent(Agent):
 
         try:
             data = {
-                "model": "gpt-4o",
+                "model": "gpt-3.5-turbo",
                 "messages": [
                     {"role": "system", "content": system_message},
                     {"role": "user", "content": user_message}
@@ -57,8 +56,8 @@ class OpenAIAgent(Agent):
         
         
 if __name__=='__main__':
-    gpt_model=OpenAIAgent()
-    tasks=Tasks(data_dir='/data/zym/VulDetectBench/dataset/test', method='few-shot', task_no=[1,2])
-    engine=VulDetectBench_Engine(model=gpt_model, save_path='./', task_and_metrics=tasks)
+    gpt_model = OpenAIAgent()
+    tasks = Tasks(data_dir='../data/VulDetectBench/', method='few-shot', task_no=[1,2])
+    engine = VulDT_Engine(model=gpt_model, save_path='../result/', task_and_metrics=tasks)
     engine.run()
     print('failed_cnt:', glb_failed_cnt)
