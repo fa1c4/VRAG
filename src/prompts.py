@@ -26,6 +26,7 @@ task_templates = {
 
 def format_dataset(task_name, raw_dataset, method=None):
     general_prompt = Template("{{ question }}\n{{example_with_restriction}}\n{{ code }}\n{{ restriction }}\n{{cot_with_restriction}}")
+    # vrag_prompt = Template("{{ question }}\n{{example_with_restriction}}\n{{ code }}\n{{ restriction }}\n{{cot_with_restriction}}")
     dataset=[]
     
     template=task_templates[task_name]
