@@ -5,6 +5,7 @@ lab*
 # FA1C4's ignore directories
 results/
 config/
+data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

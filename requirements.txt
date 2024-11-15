@@ -1,2 +1,5 @@
 openai
-liquid
+llm2vec
+flash-attn
+jsonlines
+annoy
