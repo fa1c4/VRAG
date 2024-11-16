@@ -1,5 +1,6 @@
 import os
 import json 
+import jsonlines
 from tqdm import tqdm
 from abc import ABC, abstractmethod
 from typing import Optional, Union, List
@@ -7,8 +8,6 @@ import utils as metrics_lib
 from utils import MetricsMapping as mm
 from prompts import format_dataset, task_templates
 from annoy import AnnoyIndex
-import torch
-from llm2vec import LLM2Vec
 
 
 '''
@@ -41,9 +40,9 @@ class VRAG_Engine:
     def __init__(
         self,
         emb_model: Agent,
-        path_to_vulns_db: Optional[str] = '../data/vulns_db.json',
-        path_to_annoy_index_tree: Optional[str] = '../data/annoy_index.ann', 
-        save_path: Optional[str] = '../data/match',
+        path_to_vulns_db: Optional[str] = '../data/all_fixes_data_with_SHA256.json',
+        path_to_annoy_index_tree: Optional[str] = '../data/annoy_index_tree.ann', 
+        save_path: Optional[str] = '../data/matched',
         result_name: Optional[str] = 'similar_vulns.json'
     ):
         self.emb_model = emb_model
@@ -111,7 +110,22 @@ class VRAG_Engine:
         get the information of the similar vulnerabilities
         '''
         assert self.vulns_db is not None, 'Vulnerability database is not loaded'
-        pass # to do here
+        query_results = {}
+        CVE_results, CWE_results, dist_results, desc_results, code_results = [], [], [], [], []
+        for idx, dist in zip(nearest_neighbors[0], nearest_neighbors[1]):
+            vuln = self.vulns_db[idx]
+            CVE_results.append(vuln['CVE'])
+            CWE_results.append(vuln['CWE'])
+            dist_results.append(dist)
+            desc_results.append(vuln['description'])
+            code_results.append(vuln['code_before'])
+
+        query_results['CVE'] = CVE_results
+        query_results['CWE'] = CWE_results
+        query_results['distance'] = dist_results
+        query_results['description'] = desc_results
+        query_results['code'] = code_results
+        return query_results
 
     def query(self,
               source_code: Optional[str] = None, 
@@ -121,7 +135,7 @@ class VRAG_Engine:
         all pipeline runs here
         make sure the self.save_path exists
         '''
-        assert source_code is None and code_emb is None, 'No input code provided'
+        assert source_code is not None or code_emb is not None, 'No input code provided'
         if source_code is not None:
             self._embedding_code(source_code)
         else:
@@ -130,4 +144,32 @@ class VRAG_Engine:
         # find the most similar functions
         nearest_neighbors = self._find_similar_functions(self.code_emb, top_k)
         query_results = self._get_similar_vulns_info(nearest_neighbors)
+
+        # save the results
+        if not os.path.exists(self.save_path):
+            os.makedirs(self.save_path)
+        path_to_save_results = os.path.join(self.save_path, self.result_name)
+        save_content = {}
+        if source_code is not None:
+            save_content['query_code'] = source_code
+        else:
+            save_content['query_code'] = 'code embedding'
+            save_content['code_emb'] = self.code_emb
+        
+        save_content['top_k'] = top_k
+        query_res_saved = []
+        for i in range(top_k):
+            query_res_tmp = {}
+            query_res_tmp['CVE'] = query_results['CVE'][i]
+            query_res_tmp['CWE'] = query_results['CWE'][i]
+            query_res_tmp['distance'] = query_results['distance'][i]
+            query_res_tmp['description'] = query_results['description'][i]
+            query_res_tmp['code'] = query_results['code'][i]
+            query_res_saved.append(query_res_tmp)
+
+        save_content['query_results'] = query_res_saved
+        with open(path_to_save_results, 'w') as f:
+            json.dump(save_content, f, indent=4)
+        print('Results saved to:', path_to_save_results)
+
         return query_results
