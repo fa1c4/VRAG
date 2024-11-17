@@ -8,6 +8,7 @@ import utils as metrics_lib
 from utils import MetricsMapping as mm
 from prompts import format_dataset, task_templates
 from annoy import AnnoyIndex
+import torch
 
 
 '''
@@ -80,7 +81,7 @@ class VRAG_Engine:
         """
         source_code_reps = self.emb_model.encode(source_code)
         source_code_reps_norm = torch.nn.functional.normalize(source_code_reps)
-        self.code_emb = cve_function_reps_norm[0].tolist()
+        self.code_emb = source_code_reps_norm[0].tolist()
 
     def input_code_embedding(self, code_emb):
         """
@@ -114,8 +115,8 @@ class VRAG_Engine:
         CVE_results, CWE_results, dist_results, desc_results, code_results = [], [], [], [], []
         for idx, dist in zip(nearest_neighbors[0], nearest_neighbors[1]):
             vuln = self.vulns_db[idx]
-            CVE_results.append(vuln['CVE'])
-            CWE_results.append(vuln['CWE'])
+            CVE_results.append(vuln['cve_id'])
+            CWE_results.append(vuln['cwe_id'])
             dist_results.append(dist)
             desc_results.append(vuln['description'])
             code_results.append(vuln['code_before'])
@@ -130,14 +131,17 @@ class VRAG_Engine:
     def query(self,
               source_code: Optional[str] = None, 
               code_emb: Optional[List[float]] = None,
-              top_k=10):
+              top_k=10,
+              result_name: Optional[str] = None):
         '''
         all pipeline runs here
         make sure the self.save_path exists
         '''
         assert source_code is not None or code_emb is not None, 'No input code provided'
         if source_code is not None:
-            self._embedding_code(source_code)
+            # llm2vec model takes a list of source code as input
+            source_code_list = [source_code]
+            self._embedding_code(source_code_list)
         else:
             self.input_code_embedding(code_emb)
 
@@ -146,8 +150,12 @@ class VRAG_Engine:
         query_results = self._get_similar_vulns_info(nearest_neighbors)
 
         # save the results
+        if result_name is not None:
+            self.result_name = result_name
+
         if not os.path.exists(self.save_path):
             os.makedirs(self.save_path)
+            
         path_to_save_results = os.path.join(self.save_path, self.result_name)
         save_content = {}
         if source_code is not None:
