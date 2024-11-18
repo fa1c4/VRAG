@@ -37,6 +37,17 @@ class Agent(ABC):
         pass
 
 
+'''
+Input: embedding model
+Output: 
+    query_results: {
+        "CVE": List[str],
+        "CWE": List[str],
+        "distance": List[float],
+        "description": List[str],
+        "code": List[str]
+    }
+'''
 class VRAG_Engine:
     def __init__(
         self,
@@ -79,7 +90,7 @@ class VRAG_Engine:
         """
         embed the source code into a vector
         """
-        source_code_reps = self.emb_model.encode(source_code)
+        source_code_reps = self.emb_model.encode(source_code, show_progress_bar=False)
         source_code_reps_norm = torch.nn.functional.normalize(source_code_reps)
         self.code_emb = source_code_reps_norm[0].tolist()
 
@@ -181,3 +192,48 @@ class VRAG_Engine:
         print('Results saved to:', path_to_save_results)
 
         return query_results
+
+
+'''
+vuldetectbench dataset format:
+{
+    "code": str,
+    "answer": "NO" | "YES",
+    "cwe": str,
+    "idx": str    
+}
+adding examples to dataset format:
+{
+    "code": str,
+    "answer": "NO" | "YES",
+    "cwe": str,
+    "example": str,
+    "idx": str    
+}
+'''
+def adding_examples_to_dataset(emb_model, raw_dataset, threshold=0.3):
+    processed_dataset = []
+    # load the VRAG engine
+    VRAG_inst = VRAG_Engine(emb_model)
+
+    for raw_sample in tqdm(raw_dataset):
+        source_code = raw_sample['code']
+        results = VRAG_inst.query(source_code=source_code)
+        # check the similarity score, if it is less than the threshold, add the example
+        example = 'Here is a relative vulnerability example in database:\n'
+        if results['distance'][0] <= threshold:
+            example += results['code'][0]
+            # add the vulnerability description to example
+            example += '\n' + results['description'][0]
+        else: # if no similar vulnerabilities found, then example is empty
+            example = ''
+        
+        tmp_sample = {}
+        tmp_sample['code'] = raw_sample['code']
+        tmp_sample['answer'] = raw_sample['answer']
+        tmp_sample['cwe'] = raw_sample['cwe']
+        tmp_sample['example'] = example
+        tmp_sample['idx'] = raw_sample['idx']
+        processed_dataset.append(tmp_sample)
+    
+    return processed_dataset

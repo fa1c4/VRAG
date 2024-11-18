@@ -1,5 +1,3 @@
 openai
-llm2vec
-flash-attn
 jsonlines
 annoy

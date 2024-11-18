@@ -24,31 +24,34 @@ task_templates = {
     }
 }
 
+# method logic is not implemented in this function
 def format_dataset(task_name, raw_dataset, method=None):
+    assert method in ['few-shot', 'zero-shot', None], "method should be one of 'few-shot', 'zero-shot' or None"
+
     general_prompt = Template("{{ question }}\n{{example_with_restriction}}\n{{ code }}\n{{ restriction }}\n{{cot_with_restriction}}")
     # vrag_prompt = Template("{{ question }}\n{{example_with_restriction}}\n{{ code }}\n{{ restriction }}\n{{cot_with_restriction}}")
-    dataset=[]
+    dataset = []
     
-    template=task_templates[task_name]
+    template = task_templates[task_name]
     for raw_sample in raw_dataset:
-        if task_name=='TypeInfer':
-            user_prompt=general_prompt.render(question=template['question'],
+        if task_name == 'TypeInfer':
+            user_prompt = general_prompt.render(question=template['question'],
                                               code=raw_sample['selection'] + raw_sample['code'],
                                               restriction=template['restriction'],
                                               cot_with_restriction='',
-                                              example_with_restriction='')   
+                                              example_with_restriction=raw_sample['example'] if method=='few-shot' else '')   
         else:
-            user_prompt=general_prompt.render(question=template['question'],
+            user_prompt = general_prompt.render(question=template['question'],
                                               code=raw_sample['code'],
-                                              example_with_restriction='',
+                                              example_with_restriction=raw_sample['example'] if method=='few-shot' else '',
                                               cot_with_restriction='',
                                               restriction=template['restriction'])
                
         dataset.append({
-            'id':raw_sample['idx'],
-            'system':template['system'],
-            'user':user_prompt,
-            'answer':raw_sample['answer']
+            'id': raw_sample['idx'],
+            'system': template['system'],
+            'user': user_prompt,
+            'answer': raw_sample['answer']
         })
 
     return dataset

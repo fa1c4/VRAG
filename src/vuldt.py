@@ -6,6 +6,7 @@ from typing import Optional, Union, List
 import utils as metrics_lib
 from utils import MetricsMapping as mm
 from prompts import format_dataset, task_templates
+from vrag_engine import adding_examples_to_dataset
 
 
 class Agent(ABC):
@@ -51,7 +52,8 @@ class TaskItem:
         id = data_item['id']
         question = {
             'system': data_item['system'],
-            'user': data_item['user']
+            'user': data_item['user'],
+            'example': '' if 'example' not in data_item.keys() else data_item['example']
         }
         answer = data_item['answer']
         self.current_data_index += 1
@@ -60,7 +62,7 @@ class TaskItem:
     
 
 class Tasks:
-    def __init__(self, method=None, data_dir=None, task_no:Union[int, List[int], None]=None):
+    def __init__(self, method=None, data_dir=None, task_no:Union[int, List[int], None]=None, emb_model:Optional[Agent]=None):
         if task_no == None:
             self.task_no = [1,2]
         elif type(task_no) == int:
@@ -74,6 +76,7 @@ class Tasks:
         task_selections = list(task_templates.keys())
         self.method = method
         self.data_dir = data_dir
+        self.emb_model = emb_model
         self.task_names = task_selections # [task_selections[task_no-1] for task_no in self.task_no]
         self.task_info = self._get_task_info()
         self.tasks = self._form_tasks()
@@ -88,6 +91,7 @@ class Tasks:
         path_to_dataset = os.path.join(self.data_dir, f'task{task_no}_code.jsonl')
         with open(path_to_dataset, 'r', encoding='utf-8') as f:
             print(task_no, self.task_names[task_no-1])
+            # raw_dataset is list of dict
             raw_dataset = [json.loads(line) for line in f.readlines()]
             return raw_dataset
     
@@ -95,7 +99,14 @@ class Tasks:
         # only a single task
         task_name = self.task_names[task_no-1]
         raw_dataset = self._load_dataset(task_no)
-        dataset = format_dataset(task_name, raw_dataset, self.method)
+
+        # implementing few-shot method by VRAG
+        if self.method == 'few-shot':
+            processed_dataset = adding_examples_to_dataset(self.emb_model, raw_dataset)
+        else:
+            processed_dataset = raw_dataset
+
+        dataset = format_dataset(task_name, processed_dataset, self.method)
         return dataset 
     
     def _form_tasks(self):
@@ -106,7 +117,7 @@ class Tasks:
         all_tasks = []
         for no in range(len(self.task_no)):          
             dataset = self._form_dataset(self.task_no[no])
-            task=TaskItem(name=self.task_info[no]['Name'], dataset=dataset, metric_list=self.task_info[no]['metrics'])
+            task = TaskItem(name=self.task_info[no]['Name'], dataset=dataset, metric_list=self.task_info[no]['metrics'])
             all_tasks.append(task)
         
         return all_tasks
@@ -193,8 +204,8 @@ class Evaluator:
                 # single and overall metric from the same perspective share idx.
                 single_func = self.metric_funcs['single'][func_idx]
                 single_name = self.metric_names['single'][func_idx]
-                score, filtered_answer = single_func(pair['sys'],pair['gold'])
-                single_metric = self._extract_single_metrics(score,metric_name=single_name)
+                score, filtered_answer = single_func(pair['sys'], pair['gold'])
+                single_metric = self._extract_single_metrics(score, metric_name=single_name)
                 overall_scores.append(score)
                 metric = {
                     'single metric': single_name,
@@ -235,12 +246,14 @@ class VulDT_Engine:
     def __init__(
         self,
         model: Agent,
-        task_and_metrics: Tasks, 
+        task_and_metrics: Tasks,
+        emb_model: Optional[Agent] = None, 
         verbose: bool = True,
         save_path: Optional[str] = None,
         result_name: Optional[str] = 'evaluation_report.json'
     ):
         self.model = model
+        self.emb_model = emb_model
         self.tasks = task_and_metrics
         self.verbose = verbose
         self.save_path = save_path
