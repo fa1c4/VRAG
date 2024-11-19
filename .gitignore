@@ -1,6 +1,8 @@
 # FA1C4's ignore files
 env.sh
 lab*
+*.swo
+*.swp
 
 # FA1C4's ignore directories
 results/
