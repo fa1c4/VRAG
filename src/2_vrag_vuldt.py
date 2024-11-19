@@ -11,6 +11,8 @@ from vrag_engine import VRAG_Engine
 from vuldt import Tasks, Agent, VulDT_Engine
 
 
+model_name = 'gpt-3.5-turbo'
+threshold_val = 0.5
 debug_flag = True # True | False
 glb_failed_cnt = 0
 class OpenAIAgent(Agent):
@@ -42,7 +44,7 @@ class OpenAIAgent(Agent):
 
         try:
             data = {
-                "model": "gpt-3.5-turbo",
+                "model": model_name,
                 "messages": [
                     {"role": "system", "content": system_message},
                     {"role": "system", "content": examples_message},
@@ -77,7 +79,7 @@ if __name__ == '__main__':
     )
 
     # set few-shot method to use VRAG
-    tasks = Tasks(data_dir='../data/VulDetectBench/', method='few-shot', task_no=[1,2], emb_model=l2v)
-    engine = VulDT_Engine(model=gpt_model, save_path='../result/', task_and_metrics=tasks)
+    tasks = Tasks(data_dir='../data/VulDetectBench/', method='few-shot', task_no=[1,2], emb_model=l2v, threshold=threshold_val)
+    engine = VulDT_Engine(model=gpt_model, save_path='../results/', result_name=f'{model_name}_threshold{threshold_val}_eval', task_and_metrics=tasks)
     engine.run()
     print('failed_cnt:', glb_failed_cnt)

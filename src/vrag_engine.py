@@ -64,6 +64,8 @@ class VRAG_Engine:
         self.result_name = result_name
         self.vulns_db = None
         self.annoy_idx = None
+        self.code_emb = None
+        self.code_emb_list = None
 
         # load the database
         self._load_vulns_database()
@@ -93,6 +95,16 @@ class VRAG_Engine:
         source_code_reps = self.emb_model.encode(source_code, show_progress_bar=False)
         source_code_reps_norm = torch.nn.functional.normalize(source_code_reps)
         self.code_emb = source_code_reps_norm[0].tolist()
+
+    # def _batch_embedding_code(self, source_code_list):
+    #     """
+    #     embed the source code into a vector
+    #     """
+    #     source_code_reps = self.emb_model.encode(source_code_list, show_progress_bar=False)
+    #     source_code_reps_norm = torch.nn.functional.normalize(source_code_reps)
+    #     self.code_emb_list = []
+    #     for each_emb in source_code_reps_norm:
+    #         self.code_emb_list.append(each_emb.tolist())
 
     def input_code_embedding(self, code_emb):
         """
@@ -140,7 +152,7 @@ class VRAG_Engine:
         return query_results
 
     def query(self,
-              source_code: Optional[str] = None, 
+              source_code: Union[str, List[str], None] = None, 
               code_emb: Optional[List[float]] = None,
               top_k=10,
               result_name: Optional[str] = None):
@@ -151,6 +163,11 @@ class VRAG_Engine:
         assert source_code is not None or code_emb is not None, 'No input code provided'
         if source_code is not None:
             # llm2vec model takes a list of source code as input
+            # if isinstance(source_code, str):
+            #     source_code_list = [source_code]
+            #     self._embedding_code(source_code_list)
+            # elif isinstance(source_code, list):
+            #     self._batch_embedding_code(source_code)
             source_code_list = [source_code]
             self._embedding_code(source_code_list)
         else:
@@ -216,9 +233,20 @@ def adding_examples_to_dataset(emb_model, raw_dataset, threshold=0.3):
     # load the VRAG engine
     VRAG_inst = VRAG_Engine(emb_model)
 
-    for raw_sample in tqdm(raw_dataset):
+    # embedding as batch to speed up
+    print('Embedding source code...')
+    source_code_list = [raw_sample['code'] for raw_sample in raw_dataset]
+    code_emb_list = []
+    source_code_reps = emb_model.encode(source_code_list)
+    source_code_reps_norm = torch.nn.functional.normalize(source_code_reps)
+    for each_emb in source_code_reps_norm:
+        code_emb_list.append(each_emb.tolist())
+
+    # query the VRAG engine for each sample to get similar vulnerabilities
+    print('Querying VRAG engine...')
+    for index, raw_sample in tqdm(enumerate(raw_dataset)):
         source_code = raw_sample['code']
-        results = VRAG_inst.query(source_code=source_code)
+        results = VRAG_inst.query(code_emb=code_emb_list[index])
         # check the similarity score, if it is less than the threshold, add the example
         example = 'Here is a relative vulnerability example in database:\n'
         if results['distance'][0] <= threshold:
@@ -233,6 +261,8 @@ def adding_examples_to_dataset(emb_model, raw_dataset, threshold=0.3):
         tmp_sample['answer'] = raw_sample['answer']
         tmp_sample['cwe'] = raw_sample['cwe']
         tmp_sample['example'] = example
+        if 'selection' in raw_sample.keys():
+            tmp_sample['selection'] = raw_sample['selection']
         tmp_sample['idx'] = raw_sample['idx']
         processed_dataset.append(tmp_sample)
     

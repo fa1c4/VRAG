@@ -25,7 +25,7 @@ task_templates = {
 }
 
 # method logic is not implemented in this function
-def format_dataset(task_name, raw_dataset, method=None):
+def format_dataset(task_name, raw_dataset, method = None):
     assert method in ['few-shot', 'zero-shot', None], "method should be one of 'few-shot', 'zero-shot' or None"
 
     general_prompt = Template("{{ question }}\n{{example_with_restriction}}\n{{ code }}\n{{ restriction }}\n{{cot_with_restriction}}")

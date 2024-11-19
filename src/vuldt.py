@@ -62,7 +62,12 @@ class TaskItem:
     
 
 class Tasks:
-    def __init__(self, method=None, data_dir=None, task_no:Union[int, List[int], None]=None, emb_model:Optional[Agent]=None):
+    def __init__(self, 
+                 method = None, 
+                 data_dir = None, 
+                 task_no:Union[int, List[int], None] = None, 
+                 emb_model:Optional[Agent] = None,
+                 threshold:Optional[float] = 0.5):
         if task_no == None:
             self.task_no = [1,2]
         elif type(task_no) == int:
@@ -77,6 +82,7 @@ class Tasks:
         self.method = method
         self.data_dir = data_dir
         self.emb_model = emb_model
+        self.threshold = threshold
         self.task_names = task_selections # [task_selections[task_no-1] for task_no in self.task_no]
         self.task_info = self._get_task_info()
         self.tasks = self._form_tasks()
@@ -102,7 +108,7 @@ class Tasks:
 
         # implementing few-shot method by VRAG
         if self.method == 'few-shot':
-            processed_dataset = adding_examples_to_dataset(self.emb_model, raw_dataset)
+            processed_dataset = adding_examples_to_dataset(self.emb_model, raw_dataset, self.threshold)
         else:
             processed_dataset = raw_dataset
 
