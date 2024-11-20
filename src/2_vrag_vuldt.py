@@ -1,5 +1,6 @@
 '''
 vrag enhancing vuln detection by providing vulnerabilities code snippets similar to target code in prompts
+CUDA_VISIBLE_DEVICES=1 python 2_vrag_vuldt.py
 '''
 import os
 import requests
@@ -11,10 +12,11 @@ from vrag_engine import VRAG_Engine
 from vuldt import Tasks, Agent, VulDT_Engine
 
 
-model_name = 'gpt-3.5-turbo'
+model_name = 'gpt-4-turbo' # gpt-3.5-turbo | gpt-4o | gpt-4-turbo 
 threshold_val = 0.5
 debug_flag = True # True | False
 glb_failed_cnt = 0
+glb_cnt = 0
 class OpenAIAgent(Agent):
     def __init__(self):
         self.api_key = os.getenv("OPENAI_API_KEY")
@@ -23,7 +25,7 @@ class OpenAIAgent(Agent):
             raise ValueError("OpenAI API key not found. Please set it in the environment variables.")
         
     def __call__(self, prompt):
-        global glb_failed_cnt
+        global glb_failed_cnt, glb_cnt
         if not isinstance(prompt, dict):
             raise ValueError("Prompt must be a dictionary with 'system' and 'user' keys.")
         
@@ -53,14 +55,16 @@ class OpenAIAgent(Agent):
                 "temperature": self.temperature
             }
 
-            if debug_flag:
+            glb_cnt += 1
+            if debug_flag and glb_cnt % 300 == 0:
                 print('data:', data)
             
             response = requests.post(url, headers=headers, json=data)
             return response.json()['choices'][0]['message']['content']
         except Exception as e:
             glb_failed_cnt += 1
-            print("failed request", data)
+            # print("failed request", data)
+            print("failed request", e)
             return ""
 
 
@@ -79,7 +83,7 @@ if __name__ == '__main__':
     )
 
     # set few-shot method to use VRAG
-    tasks = Tasks(data_dir='../data/VulDetectBench/', method='few-shot', task_no=[1,2], emb_model=l2v, threshold=threshold_val)
-    engine = VulDT_Engine(model=gpt_model, save_path='../results/', result_name=f'{model_name}_threshold{threshold_val}_eval', task_and_metrics=tasks)
+    tasks = Tasks(data_dir='../data/VulDetectBench/', method='few-shot', task_no=[1], emb_model=l2v, threshold=threshold_val) # task_no=[1, 2]
+    engine = VulDT_Engine(model=gpt_model, save_path='../results/', result_name=f'{model_name}_threshold{threshold_val}_eval.json', task_and_metrics=tasks)
     engine.run()
     print('failed_cnt:', glb_failed_cnt)

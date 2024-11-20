@@ -228,8 +228,9 @@ adding examples to dataset format:
     "idx": str    
 }
 '''
-def adding_examples_to_dataset(emb_model, raw_dataset, threshold=0.3):
+def adding_examples_to_dataset(emb_model, raw_dataset, threshold=0.5):
     processed_dataset = []
+    cnt_threshold = 0
     # load the VRAG engine
     VRAG_inst = VRAG_Engine(emb_model)
 
@@ -250,6 +251,7 @@ def adding_examples_to_dataset(emb_model, raw_dataset, threshold=0.3):
         # check the similarity score, if it is less than the threshold, add the example
         example = 'Here is a relative vulnerability example in database:\n'
         if results['distance'][0] <= threshold:
+            cnt_threshold += 1
             example += results['code'][0]
             # add the vulnerability description to example
             example += '\n' + results['description'][0]
@@ -266,4 +268,5 @@ def adding_examples_to_dataset(emb_model, raw_dataset, threshold=0.3):
         tmp_sample['idx'] = raw_sample['idx']
         processed_dataset.append(tmp_sample)
     
+    print('Number of examples added:', cnt_threshold)
     return processed_dataset
