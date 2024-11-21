@@ -14,3 +14,5 @@ pip install -e .
 pip install flash-attn --no-build-isolation
 
 ```
+
+to do: create specific prompt pattern to utilze existed CVE vulnerabilities to enhance exclusive vulnearbilities detection
