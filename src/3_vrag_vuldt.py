@@ -1,6 +1,6 @@
 '''
 vrag enhancing vuln detection by providing vulnerabilities code snippets similar to target code in prompts
-CUDA_VISIBLE_DEVICES=1 python 2_vrag_vuldt.py
+USAGE: CUDA_VISIBLE_DEVICES=1 python 3_vrag_vuldt.py
 '''
 import os
 import requests
@@ -12,7 +12,7 @@ from vrag_engine import VRAG_Engine
 from vuldt import Tasks, Agent, VulDT_Engine
 
 
-model_name = 'gpt-4-turbo' # gpt-3.5-turbo | gpt-4o | gpt-4-turbo 
+model_name = 'gpt-4o' # gpt-3.5-turbo | gpt-4o | gpt-4-turbo 
 threshold_val = 0.5
 debug_flag = True # True | False
 glb_failed_cnt = 0
