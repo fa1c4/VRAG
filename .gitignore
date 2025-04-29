@@ -8,6 +8,7 @@ lab*
 results/
 config/
 data/
+Morefixes/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

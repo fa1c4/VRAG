@@ -4,9 +4,10 @@ USAGE: CUDA_VISIBLE_DEVICES=1 python 3_vrag_vuldt.py
 '''
 import os
 import requests
-from openai import OpenAI
 from tqdm import tqdm
+import time
 import torch
+from openai import OpenAI
 from llm2vec import LLM2Vec
 from vrag_engine import VRAG_Engine
 from vuldt import Tasks, Agent, VulDT_Engine
@@ -65,6 +66,8 @@ class OpenAIAgent(Agent):
             glb_failed_cnt += 1
             # print("failed request", data)
             print("failed request", e)
+            print(response.json())
+            time.sleep(10)
             return ""
 
 
@@ -72,7 +75,7 @@ if __name__ == '__main__':
     gpt_model = OpenAIAgent()
 
     path_to_all_fixes_data = '../data/all_fixes_data_with_SHA256.json'
-    path_to_base_model = '../../Models/LLM2Vec-Meta-Llama-3-8B-Instruct-mntp'   
+    path_to_base_model = '../../../../archive/zym/Models/LLM2Vec-Meta-Llama-3-8B-Instruct-mntp'   
     # load embedding model
     l2v = LLM2Vec.from_pretrained(
         path_to_base_model,
@@ -83,7 +86,7 @@ if __name__ == '__main__':
     )
 
     # set few-shot method to use VRAG
-    tasks = Tasks(data_dir='../data/VulDetectBench/', method='few-shot', task_no=[1], emb_model=l2v, threshold=threshold_val) # task_no=[1, 2]
+    tasks = Tasks(data_dir='../data/VulDetectBench/', method='few-shot', task_no=[2], emb_model=l2v, threshold=threshold_val) # task_no=[1, 2]
     engine = VulDT_Engine(model=gpt_model, save_path='../results/', result_name=f'{model_name}_threshold{threshold_val}_eval.json', task_and_metrics=tasks)
     engine.run()
     print('failed_cnt:', glb_failed_cnt)
