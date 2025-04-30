@@ -14,7 +14,10 @@ from vuldt import Tasks, Agent, VulDT_Engine
 
 
 model_name = 'gpt-4o' # gpt-3.5-turbo | gpt-4o | gpt-4-turbo 
-threshold_val = 0.5
+task_num = 1
+bench_name = 'RealVulBench' # VulDetectBench | RealVulBench
+# distance threshold for VRAG
+threshold_val = 0.1
 debug_flag = True # True | False
 glb_failed_cnt = 0
 glb_cnt = 0
@@ -66,7 +69,7 @@ class OpenAIAgent(Agent):
             glb_failed_cnt += 1
             # print("failed request", data)
             print("failed request", e)
-            print(response.json())
+            print(response)
             time.sleep(10)
             return ""
 
@@ -86,7 +89,11 @@ if __name__ == '__main__':
     )
 
     # set few-shot method to use VRAG
-    tasks = Tasks(data_dir='../data/VulDetectBench/', method='few-shot', task_no=[2], emb_model=l2v, threshold=threshold_val) # task_no=[1, 2]
-    engine = VulDT_Engine(model=gpt_model, save_path='../results/', result_name=f'{model_name}_threshold{threshold_val}_eval.json', task_and_metrics=tasks)
+    # tasks = Tasks(data_dir='../data/VulDetectBench/', method='few-shot', task_no=[task_num], emb_model=l2v, threshold=threshold_val) # task_no=[1, 2]
+    # tasks = Tasks(data_dir='../data/RealVulBench/', method='few-shot', task_no=[task_num], emb_model=l2v, threshold=threshold_val) # task_no=[1, 2]
+    tasks = Tasks(data_dir=f'../data/{bench_name}/', method='zero-shot', task_no=[task_num], emb_model=l2v, threshold=threshold_val) # task_no=[1, 2]
+    engine = VulDT_Engine(model=gpt_model, save_path='../results/', result_name=f'{model_name}_{bench_name}_threshold{threshold_val}_task{task_num}_eval.json', task_and_metrics=tasks)
+    
+    print(f'running {model_name} on {bench_name} task {task_num}...')
     engine.run()
     print('failed_cnt:', glb_failed_cnt)

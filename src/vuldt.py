@@ -104,6 +104,11 @@ class Tasks:
     def _form_dataset(self, task_no):
         # only a single task
         task_name = self.task_names[task_no-1]
+        if task_no == 2:
+            assert task_name == 'TypeInfer', f"task_no is {task_no}, but task_name is {task_name}"
+        else:
+            assert task_name == 'Existence', f"task_no is {task_no}, but task_name is {task_name}"
+
         raw_dataset = self._load_dataset(task_no)
 
         # implementing few-shot method by VRAG
@@ -121,7 +126,7 @@ class Tasks:
         return:a list of object Task
         """
         all_tasks = []
-        for no in range(len(self.task_no)):          
+        for no in self.task_no:          
             dataset = self._form_dataset(self.task_no[no])
             task = TaskItem(name=self.task_info[no]['Name'], dataset=dataset, metric_list=self.task_info[no]['metrics'])
             all_tasks.append(task)
@@ -202,6 +207,15 @@ class Evaluator:
         verbose_list = []  
         overall_scores = [[]] * len(self.metric_names['overall'])
         
+        '''
+        pair:
+            {
+                'id': id,      # need to keep id
+                'prompt': prompt,
+                'sys': sys_answer,
+                'gold': gold
+            }
+        '''
         for pair in self.answer_list:
             id = pair['id']
             metrics = []
@@ -216,7 +230,9 @@ class Evaluator:
                 metric = {
                     'single metric': single_name,
                     'extracted answer': filtered_answer,
-                    'score': single_metric
+                    'score': single_metric,
+                    'prompt': pair['prompt'],
+                    'original answer': pair['sys']
                 }
                 metrics.append(metric)
                 overall_scores[func_idx].append(score)
@@ -275,6 +291,7 @@ class VulDT_Engine:
             sys_answer = self.model(prompt)
             answer_list.append({
                 'id': id,      # need to keep id
+                'prompt': prompt,
                 'sys': sys_answer,
                 'gold': gold
             })

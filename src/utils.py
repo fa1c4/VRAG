@@ -28,7 +28,6 @@ def task1_hit(sys,gold):
 
     if 'yes' in gold.lower() or 'is vulnerable' in gold.lower():
         gold_token=1
-        
     else:
         gold_token=0
     
