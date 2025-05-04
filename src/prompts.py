@@ -28,7 +28,7 @@ task_templates = {
 def format_dataset(task_name, raw_dataset, method = None):
     assert method in ['few-shot', 'zero-shot', None], "method should be one of 'few-shot', 'zero-shot' or None"
 
-    general_prompt = Template("{{ question }}\n{{example_with_restriction}}\n{{ code }}\n{{ restriction }}\n{{cot_with_restriction}}")
+    general_prompt = Template("{{ question }}\nHere are the few-shot examples:\n{{example_with_restriction}}\nNow detect the vulnerability in the following code:\n{{ code }}\n{{ restriction }}\n{{cot_with_restriction}}")
     # vrag_prompt = Template("{{ question }}\n{{example_with_restriction}}\n{{ code }}\n{{ restriction }}\n{{cot_with_restriction}}")
     dataset = []
     
@@ -39,11 +39,11 @@ def format_dataset(task_name, raw_dataset, method = None):
                                               code=raw_sample['selection'] + raw_sample['code'],
                                               restriction=template['restriction'],
                                               cot_with_restriction='',
-                                              example_with_restriction=raw_sample['example'] if method=='few-shot' else '')   
+                                              example_with_restriction=raw_sample['example'] if method=='few-shot' else 'None')   
         else:
             user_prompt = general_prompt.render(question=template['question'],
                                               code=raw_sample['code'],
-                                              example_with_restriction=raw_sample['example'] if method=='few-shot' else '',
+                                              example_with_restriction=raw_sample['example'] if method=='few-shot' else 'None',
                                               cot_with_restriction='',
                                               restriction=template['restriction'])
                

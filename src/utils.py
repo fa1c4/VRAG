@@ -131,30 +131,39 @@ def task2_se(sys : str, gold : str):
     """
     sys_code=''
     gold = gold.split('|')
+    if len(gold) == 1:
+        gold = [gold[0], gold[0]]
+    
     answers = [gold[0][0], gold[1][0]]
     score_a = 0
     if (answers[1] + '.') in sys:
         score_a += 0.5
         sys_code=answers[1]
+
     if (answers[0] + '.') in sys:
         score_a += 1
         sys_code=answers[0]
+    
     if score_a==1.5:
         score_a=0
         sys_code=''
+    
     score_b = 0
     if task2_hit(sys, gold[0]) > 0:
         score_b += 1
         sys_code=answers[0]
+    
     if task2_hit(sys, gold[1]) > 0:
         score_b += 0.5
         sys_code=answers[1]
+    
     if score_b==1.5:
         score_b=0
         sys_code=''
-    return max(score_a, score_b),sys_code
+    
+    return max(score_a, score_b), sys_code
 
-def task2_me(sys,gold):
+def task2_me(sys, gold):
     """
     Calculating Moderate Evaluation(SE) in task2:CWE type inference.
     ME: If the options include the optimal choice or suboptimal choice, score 1 point.
@@ -167,7 +176,11 @@ def task2_me(sys,gold):
         float:moderate score model gets on this sample.
     """
     gold = gold.split('|')
+    if len(gold) == 1:
+        gold = [gold[0], gold[0]]
+        
     answers = [gold[0][0], gold[1][0]]
+    
     score_a = 0
     sys_code=''
     if (answers[0] + '.') in sys :
@@ -176,15 +189,16 @@ def task2_me(sys,gold):
     elif (answers[1] + '.') in sys:
         score_a=1
         sys_code=answers[1]
+
     score_b = 0
     if task2_hit(sys, gold[0]) > 0:
         score_b = 1
-        sys_code=answers[0]
+        sys_code = answers[0]
     elif task2_hit(sys, gold[1]) > 0:
-        score_b=1
-        sys_code=answers[1]
+        score_b = 1
+        sys_code = answers[1]
             
-    return max(score_a, score_b),sys_code
+    return max(score_a, score_b), sys_code
 
 def task2_avg_se(scores):
     """

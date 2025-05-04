@@ -127,8 +127,9 @@ class Tasks:
         """
         all_tasks = []
         for no in self.task_no:          
-            dataset = self._form_dataset(self.task_no[no])
-            task = TaskItem(name=self.task_info[no]['Name'], dataset=dataset, metric_list=self.task_info[no]['metrics'])
+            idx = no - 1
+            dataset = self._form_dataset(no)
+            task = TaskItem(name=self.task_info[idx]['Name'], dataset=dataset, metric_list=self.task_info[idx]['metrics'])
             all_tasks.append(task)
         
         return all_tasks
