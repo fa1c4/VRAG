@@ -1,6 +1,6 @@
 '''
 vrag enhancing vuln detection by providing vulnerabilities code snippets similar to target code in prompts
-USAGE: CUDA_VISIBLE_DEVICES=1 python 3_vrag_vuldt.py
+USAGE: CUDA_VISIBLE_DEVICES=1 python vrag_vuldt.py
 '''
 import os
 import requests
@@ -16,12 +16,12 @@ from vuldt import Tasks, Agent, VulDT_Engine
 slct_url = 'deepseek' # gptgod | deepseek
 # model_name = 'gpt-3.5-turbo' # gpt-3.5-turbo | gpt-4o | gpt-4-turbo 
 # model_name = 'deepseek-chat' # deepseek-chat | deepseek-reasoner | deepseek-coder
-model_name = 'gpt-4-turbo' if slct_url == 'gptgod' else 'deepseek-coder'
-task_num = 1
-bench_name = 'RealVulBench' # VulDetectBench | RealVulBench
+model_name = 'gpt-4-turbo' if slct_url == 'gptgod' else 'deepseek-reasoner'
+task_num = 1 # 1 | 2
+bench_name = 'CWEClassesBench' # VulDetectBench | RealVulBench | CWEClassesBench
 # distance threshold for VRAG
 threshold_val = 0.1
-method_name = 'few-shot' # few-shot | zero-shot
+method_name = 'zero-shot' # few-shot | zero-shot
 debug_flag = True # True | False
 glb_failed_cnt = 0
 glb_cnt = 0
@@ -57,7 +57,7 @@ class OpenAIAgent(Agent):
                 "model": model_name,
                 "messages": [
                     {"role": "system", "content": system_message},
-                    {"role": "system", "content": examples_message},
+                    {"role": "example", "content": examples_message},
                     {"role": "user", "content": user_message}
                 ],
                 "temperature": self.temperature
@@ -93,9 +93,7 @@ if __name__ == '__main__':
     )
 
     # set few-shot method to use VRAG
-    # tasks = Tasks(data_dir='../data/VulDetectBench/', method='few-shot', task_no=[task_num], emb_model=l2v, threshold=threshold_val) # task_no=[1, 2]
-    tasks = Tasks(data_dir='../data/RealVulBench/', method=method_name, task_no=[task_num], emb_model=l2v, threshold=threshold_val) # task_no=[1, 2]
-    # tasks = Tasks(data_dir=f'../data/{bench_name}/', method='zero-shot', task_no=[task_num], emb_model=l2v, threshold=threshold_val) # task_no=[1, 2]
+    tasks = Tasks(data_dir=f'../data/{bench_name}/', method=method_name, task_no=[task_num], emb_model=l2v, threshold=threshold_val) # task_no=[1, 2]
     engine = VulDT_Engine(model=gpt_model, 
                           save_path='../results/', 
                           result_name=f'{model_name}_{bench_name}_{method_name}_threshold{threshold_val}_task{task_num}_eval.json', 

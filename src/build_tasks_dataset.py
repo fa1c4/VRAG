@@ -51,7 +51,7 @@ type dataset:
 target1: 50-50 real vulns and non-vulns
 target2: 1000 real vulns to select 1 / 5 types of vulns
 
-USAGE: python 1_build_dataset.py
+USAGE: python build_tasks_dataset.py
 set the paths path_to_raw_dataset and path_to_formatted_datasets
 '''
 import re
