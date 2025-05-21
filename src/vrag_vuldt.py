@@ -16,8 +16,8 @@ from vuldt import Tasks, Agent, VulDT_Engine
 slct_url = 'deepseek' # gptgod | deepseek
 # model_name = 'gpt-3.5-turbo' # gpt-3.5-turbo | gpt-4o | gpt-4-turbo 
 # model_name = 'deepseek-chat' # deepseek-chat | deepseek-reasoner | deepseek-coder
-model_name = 'gpt-4-turbo' if slct_url == 'gptgod' else 'deepseek-reasoner'
-task_num = 1 # 1 | 2
+model_name = 'gpt-3.5-turbo' if slct_url == 'gptgod' else 'deepseek-reasoner'
+task_num = 2 # 1 | 2
 bench_name = 'CWEClassesBench' # VulDetectBench | RealVulBench | CWEClassesBench
 # distance threshold for VRAG
 threshold_val = 0.1
@@ -25,6 +25,8 @@ method_name = 'zero-shot' # few-shot | zero-shot
 debug_flag = True # True | False
 glb_failed_cnt = 0
 glb_cnt = 0
+
+
 class OpenAIAgent(Agent):
     def __init__(self):
         self.api_key = os.getenv("OPENAI_API_KEY")
@@ -39,7 +41,7 @@ class OpenAIAgent(Agent):
         
         system_message = prompt.get("system", "")
         user_message = prompt.get("user", "")
-        examples_message = prompt.get("examples", "") # few-shot examples
+        # examples_message = prompt.get("examples", "") # few-shot examples
         
         if not user_message:
             raise ValueError("User message must be provided in the prompt.")
@@ -57,7 +59,6 @@ class OpenAIAgent(Agent):
                 "model": model_name,
                 "messages": [
                     {"role": "system", "content": system_message},
-                    {"role": "example", "content": examples_message},
                     {"role": "user", "content": user_message}
                 ],
                 "temperature": self.temperature
@@ -73,7 +74,8 @@ class OpenAIAgent(Agent):
             glb_failed_cnt += 1
             # print("failed request", data)
             print("failed request", e)
-            print(response)
+            if response is not None:
+                print(response)
             time.sleep(10)
             return ""
 
@@ -99,6 +101,6 @@ if __name__ == '__main__':
                           result_name=f'{model_name}_{bench_name}_{method_name}_threshold{threshold_val}_task{task_num}_eval.json', 
                           task_and_metrics=tasks)
     
-    print(f'running {model_name} on {bench_name} task {task_num}...')
+    print(f'running {model_name} with {method_name} on {bench_name} task {task_num}...')
     engine.run()
     print('failed_cnt:', glb_failed_cnt)
