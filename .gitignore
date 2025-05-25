@@ -9,6 +9,7 @@ results/
 config/
 data/
 Morefixes/
+figures/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
